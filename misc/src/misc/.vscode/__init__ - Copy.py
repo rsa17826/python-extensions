@@ -1,0 +1,1282 @@
+# @regex (Returns|Raises):\n\s+(.*?):(.+)$
+# @flags mg
+# @replace $1 ($2):$3
+# @endregex
+
+import re
+import json as oldjson
+import os
+from pathlib import Path
+from folderikon.folderikon import FolderIkon
+from time import sleep as __badsleep
+import shutil
+import copy
+import sys
+import re
+import os
+import TKinterModernThemes as TKMT
+import sys
+import os
+import subprocess as sp
+import tkinter as tk
+
+from functools import partial as bind
+
+__all__ = [
+    "dictmerge",
+    "json",
+    "setfoldericon",
+    "showpath",
+    "quote",
+    "sleep",
+    "enum",
+    "args",
+    "f",
+    "print",
+    "fg",
+    "bg",
+    "listcolors",
+]
+
+
+class cache:
+    """simple caching function
+
+    Returns (self): cache manager object
+
+    EXAMPLE: if cache.has("item"):\n
+    \treturn cache.get()\n
+    value = dothings()
+    return cache.set(value)
+    """
+
+    lastinp = None
+
+    def __init__(self):
+        """generate new cache object"""
+        self.cache = {}
+
+    def has(self, item):
+        """tells if item is in cache object
+
+        Args:
+            item (ant): item to check
+
+        Returns (bool): returns true if item is cahed
+        """
+        self.lastinp = item
+        return item in self.cache
+
+    def get(self):
+        """returns the item from the cache - should be called only if self.has has returned true - returns the last item that was checked for in the cache
+
+        Raises (KeyError): if item is not in cache
+
+        Returns (any): returns the item from cache
+        """
+        if not self.has(self.lastinp):
+            raise KeyError(f"No such item {self.lastinp}")
+        thing = self.cache[self.lastinp]
+        del self.lastinp
+        return thing
+
+    def set(self, value):
+        """sets the item in cache to a value - should only be used after calling self.has returned false - updates the last item that was checked for in the cache
+
+        Args:
+            value (any): the value to set the item to
+
+        Returns (type(value)): the data that was passed in as value
+        """
+        self.cache[self.lastinp] = value
+        del self.lastinp
+        return value
+
+    def clear(self):
+        """clears the cache"""
+        self.cache = {}
+
+
+class enum:
+    """creates an enum var like enum in gdscript"""
+
+    def __init__(self, *args):
+        self._dict = dict(zip(args, range(len(args))))
+
+    def __getattr__(self, name: str) -> int:
+        return self._dict[name]
+
+    def __getitem__(self, name: str) -> int:
+        return self._dict[name]
+
+
+# F
+class f:
+    @staticmethod
+    def read(
+        file,
+        default="",
+        asbinary=False,
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+        closefd: bool = True,
+        opener=None,
+    ):
+        if Path(file).exists():
+            f = open(
+                file,
+                "r" + ("b" if asbinary else ""),
+                buffering=buffering,
+                encoding=encoding,
+                errors=errors,
+                newline=newline,
+                closefd=closefd,
+                opener=opener,
+            )
+            text = f.read()
+            f.close()
+            if text:
+                return text
+            return default
+        else:
+            f = open(
+                file,
+                "w" + ("b" if asbinary else ""),
+                buffering=buffering,
+                encoding=encoding,
+                errors=errors,
+                newline=newline,
+                closefd=closefd,
+                opener=opener,
+            )
+            f.write(default)
+            f.close()
+            return default
+
+    @staticmethod
+    def write(
+        file,
+        text,
+        asbinary=False,
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+        closefd: bool = True,
+        opener=None,
+    ):
+        f = open(
+            file,
+            "w" + ("b" if asbinary else ""),
+            buffering=buffering,
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+            closefd=closefd,
+            opener=opener,
+        )
+        f.write(text)
+        f.close()
+        return text
+
+    @staticmethod
+    def append(
+        file,
+        text,
+        asbinary=False,
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+        closefd: bool = True,
+        opener=None,
+    ):
+        f = open(
+            file,
+            "a",
+            buffering=buffering,
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+            closefd=closefd,
+            opener=opener,
+        )
+        f.write(text)
+        f.close()
+        return text
+
+    @staticmethod
+    def writeline(
+        file,
+        text,
+    ):
+        f = open(
+            file,
+            "a",
+        )
+        f.write("\n" + text)
+        f.close()
+        return text
+
+
+# END
+
+# ARGS
+cmdargs = []
+a_args = {}
+
+
+class args:
+    @staticmethod
+    def parse(args: list[str] | None = None) -> dict[str, list[str | None]]:
+        global a_args
+        if args == None:
+            args = sys.argv[1:]
+        argobj = {}
+        key = None
+        while len(args):
+            arg = args[0]
+            if arg.startswith("-") or arg.startswith("/"):
+                arg = re.sub(r"^(--?|\/)", "", arg)
+                key = arg
+                if arg not in argobj:
+                    argobj[key] = []
+            else:
+                argobj[key].append(arg)
+            args = args[1:]
+        a_args = argobj
+        return argobj
+
+    @staticmethod
+    def anyargs():
+        return a_args
+
+    @staticmethod
+    def match(cmd, option):
+        foundcmd = None
+        for obj in cmdargs:
+            if cmd in obj["cmds"]:
+                foundcmd = obj
+                break
+        if not foundcmd:
+            print.error(cmd, "not in aliases")
+            return False
+        for value in foundcmd["values"]:
+            if option in value["cmds"]:
+                if "" in value["cmds"] and not args.get(cmd):
+                    return True
+                for foundopt in value["cmds"]:
+                    if foundopt in args.get(cmd):
+                        return True
+        return False
+
+    @staticmethod
+    def has(hasarg):
+        cmd = None
+        for obj in cmdargs:
+            if hasarg in obj["cmds"]:
+                cmd = obj
+                break
+        if not cmd:
+            print.error(hasarg, "not in aliases")
+            return False
+        for cmd in cmd["cmds"]:
+            if cmd in a_args:
+                return True
+        return False
+
+    @staticmethod
+    def setalias(*a):
+        global cmdargs
+        cmdargs += a
+
+    @staticmethod
+    def showgui():
+        args = []
+        vars = {}
+        cmdtypes = enum(
+            "bool",
+            "text",
+            "enum",
+        )
+
+        def run(hide=""):
+            script_path = os.path.abspath(sys.argv[0])
+            for cmd, obj in vars.items():
+                val = obj["var"].get()
+                type = obj["type"]
+                # print.debug(cmd, val, obj)
+                if (
+                    val == "UNSET" and (type == cmdtypes.enum or type == cmdtypes.text)
+                ) or (val == "0" and type == cmdtypes.bool):
+                    continue
+                if val == "1":
+                    args.append(f"-{cmd}")
+                else:
+                    args.append(f"-{cmd}")
+                    if val in obj["replacements"] and obj["replacements"][val] != "":
+                        args.append(obj["replacements"][val])
+            # print.debug(args)
+            sp.run(
+                [
+                    f"{os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runpyfile.exe')}",
+                    f"{script_path}",
+                    hide,
+                    *args,
+                ]
+            )
+            sys.exit(0)
+
+        ui = TKMT.ThemedTKinterFrame("TITLE", "park", "dark", False, False)
+        ui.Button("run", run)
+        ui.Button("run hidden", bind(run, "hide"))
+        ui.Seperator()
+        ui.root.protocol("WM_DELETE_WINDOW", lambda: os._exit(0))
+
+        class add:
+            @staticmethod
+            def option(cmd, text, options, replacements):
+                ui.Text(text)
+                vars[cmd] = {
+                    "var": tk.StringVar(),
+                    "type": cmdtypes.enum,
+                    "replacements": replacements,
+                }
+                vars[cmd]["var"].set(options[0])
+                ui.OptionMenu(options, vars[cmd]["var"])
+                # allow custom text
+                # ui.Combobox(options, vars[cmd]["var"])
+
+            @staticmethod
+            def bool(cmd, text):
+                vars[cmd] = {"var": tk.StringVar(), "type": cmdtypes.bool}
+                vars[cmd]["var"].set(0)
+                ui.SlideSwitch(text, vars[cmd]["var"])
+
+            @staticmethod
+            def text(cmd, text):
+                vars[cmd] = {"var": tk.StringVar(), "type": cmdtypes.text}
+                vars[cmd]["var"].set("")
+                ui.Entry(text, vars[cmd]["var"])
+
+        for arg in cmdargs:
+            if "values" in arg:
+                replacements = {}
+                usertexts = ["UNSET"]
+                for obj in arg["values"]:
+                    text = f'"{'", "'.join(obj['cmds'])}"'
+                    if "help" in obj:
+                        text += f" = {obj["help"]}"
+                    replacements[text] = obj["cmds"][0]
+                    usertexts.append(text)
+                add.option(
+                    arg["cmds"][0],
+                    arg["help"] if "help" in arg else arg["cmds"][0],
+                    usertexts,
+                    replacements,
+                )
+                # add.text(val)
+            else:
+                add.bool(arg["cmds"][0], arg["help"])
+
+        ui.run()
+
+    @staticmethod
+    def get(getarg):
+        if not args.has(getarg):
+            return []
+        cmd = None
+        for arg in cmdargs:
+            if getarg in arg["cmds"]:
+                cmd = arg
+                break
+        if not cmd:
+            # print(arg, "not in aliases")
+            return False
+        found = []
+        for arg in cmd["cmds"]:
+            if arg in a_args:
+                found += a_args[arg]
+        return found
+
+
+args.parse()
+
+args.setalias(
+    {
+        "cmds": ["log"],
+        "help": "log all print statements",
+    },
+)
+args.setalias(
+    {
+        "cmds": ["h", "help", "?"],
+        "help": "Show this help message.",
+    },
+    {
+        "cmds": ["gui"],
+        "help": "Open the GUI",
+    },
+)
+
+args.setalias(
+    {
+        "cmds": ["plainprint", "plain print", "plain-print", "pp"],
+        "help": "print all text with no colors",
+    }
+)
+plainprint = args.has("plainprint")
+
+
+def printinbox(printtext, box="╫"):
+    """prints text with a box around it -
+    fails with \\t and other longer chars
+    FIX LATER
+
+    Args:
+        printtext (str): text to print
+        box (str, optional): char to make b ox out of. Defaults to "╫".
+    """
+    printtext = printtext.strip().split("\n")
+    linelen = len(max(printtext, key=len))
+    print(box * (linelen + 4))
+    print(box + " " * (linelen + 2) + box)
+    for text in printtext:
+        print(box + " " + text + " " * (linelen - len(text)) + " " + box)
+    print(box + " " * (linelen + 2) + box)
+    print(box * (linelen + 4))
+
+
+# apathyosis
+from threading import Timer
+
+Timer(0, lambda: args.showgui() if args.has("gui") else None).start()
+
+
+def showhelp():
+    if args.has("?"):
+        printtext = ""
+        for cmdarg in cmdargs:
+            if "help" in cmdarg:
+                printtext += f'\n"{'", "'.join(cmdarg["cmds"])}" = {cmdarg['help']}'
+            else:
+                printtext += f'\n"{'", "'.join(cmdarg["cmds"])}"'
+            if "values" in cmdarg and cmdarg["values"]:
+                printtext += ":"
+                for obj in cmdarg["values"]:
+                    printtext += f'\n  "{'", "'.join(obj['cmds'])}" = {obj['help']}'
+        printinbox(printtext)
+
+
+Timer(
+    0.1, showhelp
+).start()  # dont know why but 0 doesnt work on this like it did above
+# END
+
+
+def flat(args):
+    """flattens a list by one layer
+
+    Args:
+        args (list): list to flatten
+
+    Returns (list): flattened list
+    """
+    retvals = []
+    for arg in args:
+        retvals += arg
+    return retvals
+
+
+def sleep(time):
+    """sleep but in ms
+
+    Args:
+        time (int | float): time to wait
+    """
+    __badsleep(time / 1000)
+
+
+def quote(data):
+    return f'"{data}"'
+
+
+def showpath(path):
+    return quote(os.path.normpath(path))
+
+
+def dictmerge(dict1, dict2, reversePriority=False):
+    """
+    Merge two dictionaries into one, with the second dictionary's values taking priority over the first dictionary's values.
+    If a key in both dictionaries is a list, append all items from the second dictionary's list to the first dictionary's list.
+    If a key in both dictionaries is a sub-dictionary, recursively merge the sub-dictionaries.
+    If reversePriority is True, prioritize the first dictionary's values over the second dictionary's values.
+
+    Parameters:
+        dict1 (dict): The base dictionary.
+        dict2 (dict): The secondary dictionary whose values take priority.
+        reversePriority (bool): Whether to prioritize the first dictionary's values. Default: False.
+
+    Returns (dict:): The merged dictionary.
+    """
+    for key, value in dict2.items():
+        if isinstance(value, list) and key in dict1:
+            for listitem in value:
+                if listitem not in dict1[key]:
+                    dict1[key].append(listitem)
+        elif isinstance(value, dict) and key in dict1:
+            dictmerge(dict1[key], value, reversePriority=reversePriority)
+        else:
+            if not reversePriority or key not in dict1:
+                dict1[key] = value
+    return dict1
+
+
+class json:
+    """
+    A class for working with JSON data.
+
+    This class provides methods for parsing and merging JSON data, as well as setting folder icons.
+    """
+
+    @staticmethod
+    def parseincludes(
+        parent, innerjson=None, splitpathat="/", previnnerjson=None
+    ) -> dict | list:
+        """
+        Recursively merge included JSON data into a parent dictionary.
+
+        This method traverses the parent dictionary and includes referenced JSON data from specified paths.
+        If a path is invalid or a recursion error occurs, an error message will be printed.
+
+        Parameters:
+            parent (dict): The parent dictionary to merge into.
+            innerjson : SHOULD NOT BE SET
+            splitpathat (str): The path separator to use when splitting include paths. Defaults to "/".
+            previnnerjson : SHOULD NOT BE SET
+
+        Returns (dict): The merged dictionary with included JSON data.
+        """
+
+        def ref(mainjson, thisjson=None):
+            thisjson = copy.deepcopy(mainjson if thisjson is None else thisjson)
+            if isinstance(thisjson, dict) and "#include" in thisjson:
+                if not isinstance(thisjson["#include"], list):
+                    print.error(
+                        f"#incldue should be a list not a {type(thisjson["#include"])}",
+                        thisjson,
+                    )
+                    # os._exit(-1)
+                    raise TypeError(
+                        f"#incldue should be a list not a {type(thisjson["#include"])}"
+                    )
+                for include in thisjson["#include"]:
+                    try:
+                        jsonatpath = mainjson
+                        for pathpart in (
+                            include.split(splitpathat) if splitpathat else [include]
+                        ):
+                            jsonatpath = jsonatpath[pathpart]
+                        newref = ref(mainjson, jsonatpath)
+                        # if isinstance(newref, list):
+                        #     key = include.split(splitpathat)[-1]
+                        #     if key in thisjson and thisjson[key]:
+                        #         thisjson[key] += newref
+                        #     else:
+                        #         thisjson[key] = newref
+                        # elif isinstance(newref, dict):
+                        dictmerge(thisjson, newref, reversePriority=True)
+                    except (RecursionError, KeyError) as e:
+                        if isinstance(e, KeyError):
+                            print.warn(
+                                f"error accessing included path {showpath(include)} originating from path {
+                                    showpath(key)}"
+                            )
+                        elif isinstance(e, RecursionError):
+                            print.error(
+                                f"recursion error found when reading included path {
+                                    showpath(include)} originating from path {showpath(key)}"
+                            )
+                            raise e
+                del thisjson["#include"]
+            if isinstance(thisjson, list):
+                for item in thisjson:
+                    if isinstance(item, dict) and "#include" in item:
+                        thisjson.remove(item)
+                        lastthisjson = copy.deepcopy(thisjson)
+                        thisjson = []
+                        # asdasdajkasdgasdjksadjkasdgsadkgjsajkasdgkjgassdagkjasd
+                        if not isinstance(item["#include"], list):
+                            print.error(
+                                f"#incldue should be a list not a {type(item["#include"])}",
+                                thisjson,
+                            )
+                            # os._exit(-1)
+                            raise TypeError(
+                                f"#incldue should be a list not a {type(item["#include"])}"
+                            )
+
+                        for include in item["#include"]:
+                            try:
+                                jsonatpath = mainjson
+                                for pathpart in (
+                                    include.split(splitpathat)
+                                    if splitpathat
+                                    else [include]
+                                ):
+                                    jsonatpath = jsonatpath[pathpart]
+                                newref = ref(mainjson, jsonatpath)
+                                if isinstance(newref, list):
+                                    thisjson += newref
+                            except (RecursionError, KeyError) as e:
+                                if isinstance(e, KeyError):
+                                    print.warn(
+                                        f"error accessing included path {showpath(include)} originating from path {
+                                            showpath(key)}"
+                                    )
+                                elif isinstance(e, RecursionError):
+                                    print.error(
+                                        f"recursion error found when reading included path {
+                                            showpath(include)} originating from path {showpath(key)}"
+                                    )
+                                    raise e
+                        thisjson += lastthisjson
+                        # asdasd
+            return copy.deepcopy(thisjson)
+
+        if innerjson is None:
+            innerjson = parent
+        if isinstance(innerjson, list):
+            for item in innerjson:
+                if isinstance(item, list):
+                    json.parseincludes(
+                        parent, item, splitpathat=splitpathat, previnnerjson=innerjson
+                    )
+                if isinstance(item, dict):
+                    if "#include" in item:
+                        for key, val in previnnerjson.items():  # type: ignore
+                            if val == innerjson:
+                                previnnerjson[key] = ref(parent, innerjson)  # type: ignore
+                                break
+                    json.parseincludes(
+                        parent, item, splitpathat=splitpathat, previnnerjson=innerjson
+                    )
+        else:
+            for key, val in innerjson.items():
+                if isinstance(val, list):
+                    json.parseincludes(
+                        parent, val, splitpathat=splitpathat, previnnerjson=innerjson
+                    )
+                if isinstance(val, dict):
+                    innerjson[key] = ref(parent, innerjson[key])
+                    json.parseincludes(
+                        parent,
+                        innerjson[key],
+                        splitpathat=splitpathat,
+                        previnnerjson=innerjson,
+                    )
+        return parent
+
+    @staticmethod
+    def parse(json: str) -> list | dict:
+        """Parse a JSON string into a Python object ignoring comments.
+
+        This method removes any // or /* */ style comments from the input JSON string before parsing it.
+
+        Parameters:
+            json (str): The JSON string to parse.
+
+        Returns (list | dict): The parsed JSON data.
+        """
+        json = re.sub(
+            r"^ *//.*$\n?", "", json, flags=re.MULTILINE
+        )  # remove // comments
+        json = re.sub(
+            r"^ */\*[\s\S]*?\*\/$", "", json, flags=re.MULTILINE
+        )  # remove /**/ comments
+        json = re.sub(
+            r"(,\s+)\}", "}", json, flags=re.MULTILINE
+        )  # remove extra trailing commas
+        json = re.sub(
+            r"(,\s+)\]", "]", json, flags=re.MULTILINE
+        )  # remove extra trailing commas
+        return oldjson.loads(json)
+
+    @staticmethod
+    def str(obj, indent=False):
+        if indent:
+            global plainprint
+            temp = plainprint
+            plainprint = True
+            data = formatitem(obj)
+            plainprint = temp
+            return data
+        else:
+            return oldjson.dumps(obj)
+
+
+def setfoldericon(dir: str, imgpath: str) -> None:
+    """
+    Set the folder icon for a directory.
+
+    This function replaces the existing folder icon with a new one from the specified image path.
+    If the new image is identical to the old one, no changes are made.
+
+    Parameters:
+        dir (str): The absolute path of the directory whose icon should be updated.
+        imgpath (str): The absolute path of the new image file to use as the folder icon.
+    """
+    dir = os.path.abspath(dir)
+    if Path(os.path.join(dir, "foldericon.ico")).is_file():
+        oldfilebin = f.read(os.path.join(dir, "foldericon.ico"), asbinary=True)
+        newfilebin = f.read(imgpath, asbinary=True)
+        if newfilebin == oldfilebin:
+            return
+    try:
+        os.remove(os.path.join(dir, "foldericon.ico"))
+    except Exception:
+        pass
+    sleep(10)
+    shutil.copy(imgpath, os.path.join(dir, "foldericon.ico"))
+    sleep(10)
+
+    class temp:
+        image = os.path.join(dir, "foldericon.ico")
+        icon = Path(os.path.join(dir, "foldericon.ico"))
+        parent = Path(dir)
+        delete_original = False
+        raise_on_existing = False
+        dont_hide_icon = False
+        no_color = False
+
+    workdir = os.getcwd()
+    os.chdir(dir)
+    fi = FolderIkon(temp)
+    fi.image = Path(os.path.join(dir, "foldericon.ico"))
+    fi.iconize()
+    os.chdir(workdir)
+
+    print.debug(f"icon updated for {showpath(dir)}")
+
+
+# def move(start, end):
+#     """
+#     Moves a single file from the start path to the end directory.
+
+#     If the destination is a directory and the source is a file,
+#     renames the file using the rename function.
+
+#     Args:
+#         start (str): The original path of the file.
+#         end (str): The destination directory.
+
+#     Returns (None):
+#     """
+#     if Path(start).is_file() and Path(end).is_dir():
+#         file = start
+#         base_name, extension = os.path.splitext(file)
+#         os.rename(file, rename(extension, end, base_name))
+
+
+def make_same_length(strings: list[str], char_to_use: str = " "):
+    """makes all strings the same length by adding to start and equaly to center
+
+    Args:
+        strings (list[str]): the list of strings to center
+        char_to_use (str, optional): the char to use to center items - only one char length for best results. Defaults to " ".
+
+    Returns (list[str]): list of strings
+    """
+    # Find the maximum length of the strings in the array
+    max_length = max(len(s) for s in strings)
+
+    # Pad each string to the maximum length
+    for i in range(len(strings)):
+        current_length = len(strings[i])
+        if current_length < max_length:
+            padding = (max_length - current_length) // 2
+            strings[i] = char_to_use * padding + strings[i] + char_to_use * padding
+            # If still shorter, add one more char_to_use
+            if len(strings[i]) < max_length:
+                strings[i] += char_to_use
+    return strings
+
+
+# COLORPRINT
+
+prevprint = print
+
+
+def fg(color=None):
+    """returns ascii escape for forground colors
+
+    Args:
+        color (str, optional): the number of the collor to get. Defaults to None - if none return the remove color sequence instead.
+
+    Returns (str): ascii escape for forground colors
+    """
+    return "\33[38;5;" + str(color) + "m" if color else "\u001b[0m"
+
+
+def bg(color=None):
+    """returns ascii escape for background colors
+
+    Args:
+        color (str, optional): the number of the collor to get. Defaults to None - if none return the remove color sequence instead.
+
+    Returns (str): ascii escape for background colors
+    """
+    return "\33[48;5;" + str(color) + "m" if color else "\u001b[0m"
+
+
+def getcolor(color):
+    """will make better later
+
+    Args:
+        color (string): one of the set colors
+
+    Raises (ValueError): if color is not a valid color
+
+    Returns (str): an ascii escape sequence of the color
+    """
+    # if plainprint:
+    #     return ""
+    match color.lower():
+        case "end":
+            return "\x1b[0m"
+        case "nc":
+            return "\x1b[0m"
+        case "red":
+            return fg(1) or "\033[0m"
+        case "purple":
+            return fg(92)
+        case "blue":
+            return fg(19)
+        case "green":
+            return fg(28)
+        case "magenta":
+            return fg(90)
+        case "bright blue":
+            return fg(27)
+        case "yellow":
+            return fg(3)
+        case "bold":
+            return "\033[1m"
+        case "underline":
+            return "\033[4m"
+        case "white":
+            return fg(15)
+        case "cyan":
+            return fg(45) or "\033[96m"
+        case "orange":
+            return fg(208)
+        case "pink":
+            return fg(213)
+        case _:
+            raise ValueError(f"{color} is not a valid color")
+
+
+def listcolors():
+    """
+    Print a table of colors.
+    """
+    for row in range(-1, 42):
+
+        def print_six(row, format):
+            for col in range(6):
+                color = row * 6 + col + 4
+                if color >= 0:
+                    text = "{:3d}".format(color)
+                    print(format(color) + text + getcolor("END"), end=" ")
+                else:
+                    print("   ", end=" ")
+
+        print_six(row, fg)
+        print("", end=" ")
+        print_six(row, bg)
+        print()
+
+
+def logfile(
+    type, *data, sep: str | None = " ", end: str | None = "\n", format: bool = True
+):
+    if not args.has("log"):
+        return
+    if not sep:
+        sep = " "
+    if not end:
+        end = "\n"
+    if end != "\n":
+        type = ""
+    else:
+        type += " "
+    if format:
+        data = sep.join(map(formatitem, data))
+    else:
+        data = sep.join(map(str, data))
+    dir = os.path.join(os.path.dirname(sys.argv[0]) or ".", "logs")
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    f.append(
+        os.path.join(dir, "log.ans"),
+        type + data + getcolor("end") + end,
+        encoding="utf-8",
+    )
+
+
+# re.sub(r"\[\d+m", "", data)
+
+
+class print:
+    c = (lambda x: "") if args.has("pp") else getcolor
+    showdebugs = True
+    defaultiscolor = False
+
+    @staticmethod
+    def plain(
+        *a,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        file=None,
+        flush=False,
+    ):
+        logfile(f"{fg(213)}[plain]", *a, sep=sep, end=end)
+        prevprint(
+            *map(str, a), print.c("END"), sep=sep, end=end, file=file, flush=flush
+        )
+
+    @staticmethod
+    def color(
+        *a,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        file=None,
+        flush=False,
+    ):
+        logfile(f"{fg(213)}[color]", *a, sep=sep, end=end)
+        prevprint(
+            *map(bind(formatitem, nocolor=args.has("pp")), a),
+            print.c("END"),
+            sep=sep,
+            end=end,
+        )
+
+    @staticmethod
+    def __init__(
+        *a,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        file=None,
+        flush=False,
+    ):
+        logfile("[default]", *a, sep=sep, end=end, format=print.defaultiscolor)
+
+        if print.defaultiscolor:
+            prevprint(
+                *map(bind(formatitem, nocolor=args.has("pp")), a),
+                print.c("END"),
+                sep=sep,
+                end=end,
+            )
+        else:
+            prevprint(*a, sep=sep, end=end)
+
+    @classmethod
+    def debug(
+        cls,
+        *a,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        file=None,
+        flush=False,
+    ):
+        if not cls.showdebugs:
+            return
+        logfile(
+            f"{getcolor("BLUE")}{getcolor("BOLD")}[DEBUG]{getcolor("END")}",
+            *a,
+            sep=sep,
+            end=end,
+        )
+
+        prevprint(
+            f"{print.c("BLUE")}{print.c("BOLD")}[DEBUG]{print.c("END")}",
+            *map(bind(formatitem, nocolor=args.has("pp")), a),
+            print.c("END"),
+            sep=sep,
+            end=end,
+            file=file,
+            flush=flush,
+        )
+
+    @staticmethod
+    def warn(
+        *a,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        file=None,
+        flush=False,
+    ):
+        logfile(
+            f"{getcolor("YELLOW")}{getcolor("BOLD")}[WARNING]{getcolor("END")}",
+            *a,
+            sep=sep,
+            end=end,
+        )
+
+        prevprint(
+            f"{print.c("YELLOW")}{print.c("BOLD")}[WARNING]{print.c("END")}",
+            *map(bind(formatitem, nocolor=args.has("pp")), a),
+            print.c("END"),
+            sep=sep,
+            end=end,
+            file=file,
+            flush=flush,
+        )
+
+    @staticmethod
+    def error(
+        *a,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        file=None,
+        flush=False,
+    ):
+        logfile(
+            f"{getcolor("RED")}{getcolor("BOLD")}[ERROR]{getcolor("END")}",
+            *a,
+            sep=sep,
+            end=end,
+        )
+
+        prevprint(
+            f"{print.c("RED")}{print.c("BOLD")}[ERROR]{print.c("END")}",
+            *map(bind(formatitem, nocolor=args.has("pp")), a),
+            print.c("END"),
+            sep=sep,
+            end=end,
+            file=file,
+            flush=flush,
+        )
+
+    @staticmethod
+    def sucess(
+        *a,
+        sep: str | None = " ",
+        end: str | None = "\n",
+        file=None,
+        flush=False,
+    ):
+        logfile(
+            f"{getcolor("GREEN")}{getcolor("BOLD")}[SUCESS]{getcolor("END")}",
+            *a,
+            sep=sep,
+            end=end,
+        )
+        prevprint(
+            f"{print.c("GREEN")}{print.c("BOLD")}[SUCESS]{print.c("END")}",
+            *map(bind(formatitem, nocolor=args.has("pp")), a),
+            print.c("END"),
+            sep=sep,
+            end=end,
+            file=file,
+            flush=flush,
+        )
+
+
+def formatitem(item, tab=-2, isarrafterdict=False, nocolor=False):
+    """formats data into a string
+
+    Args:
+        item (any): the item to format
+        tab (): - DONT SET MANUALY
+        isarrafterdict (): - DONT SET MANUALY
+
+    Returns (str): the formatted string
+    """
+
+    class _class:
+        pass
+
+    def _func():
+        pass
+
+    def stringify(obj):
+        def replace_unstringables(value):
+
+            if type(value) in [type(_func), type(_class)]:
+                return f"<{value.__name__}>"
+            return value
+
+        def convert(obj):
+            if isinstance(obj, dict):
+                return {k: convert(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [convert(v) for v in obj]
+            return replace_unstringables(obj)
+
+        return oldjson.dumps(convert(obj))
+
+    wrapat = 80
+    tab += 2
+    TYPENAME = ""
+    c = (lambda x: "") if nocolor else getcolor
+    try:
+        # print.plain(item, tab)
+        if item == True and type(item) == type(True):
+            return "true"
+        if item == False and type(item) == type(False):
+            return "false"
+        if type(item) in [type(_class), type(_func)]:
+            return f"{c("RED")}<{"class" if type(item)==type(_class) else "function"} {c("BOLD")}{c("BLUE")}{item.__name__}{c("END")}{c("RED")}>{c("END")}"
+        if isinstance(item, str):
+            return (
+                c("purple")
+                + '"'
+                + str(item).replace("\\", "\\\\").replace('"', '\\"')
+                + '"'
+                + c("END")
+            )
+        if isinstance(item, int) or isinstance(item, float):
+            item = str(item)
+            reg = [r"(?<=\d)(\d{3}(?=(?:\d{3})*(?:$|\.)))", r",\g<0>"]
+            if "." in item:
+                return (
+                    c("GREEN")
+                    + re.sub(reg[0], reg[1], item.split(".")[0])
+                    + "."
+                    + item.split(".")[1]
+                    + c("END")
+                )
+            return c("GREEN") + re.sub(reg[0], reg[1], item) + c("END")
+            # Σ╘╬╧╨╤╥╙╘╒╓╖╕╔╛╙╜╝╚╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿
+
+        def name(item):
+            try:
+                return f'{c("pink")}╟{item.__name__}╣{c("END")}'
+                # return f'{c("pink")}╟{item.__name__}╿{item.__class__.__name__}╣{c("END")}'
+            except:
+                return f'{c("pink")}╟{item.__class__.__name__}╣{c("END")}'
+
+        # TYPENAME=name(item)
+
+        if not (isinstance(item, dict) or isinstance(item, list)):
+            if isinstance(item, tuple):
+                TYPENAME = name(item)
+            else:
+                try:
+                    temp = [*item]
+                    TYPENAME = name(item)
+                    item = temp
+                except:
+                    try:
+                        temp = {**item}
+                        TYPENAME = name(item)
+                        item = temp
+                    except:
+                        pass
+
+        if isinstance(item, dict):
+            if not len(item):
+                return "{}"
+            if len(stringify(item)) + tab < wrapat:
+                return (
+                    TYPENAME
+                    + c("orange")
+                    # + "\n"
+                    + (" " * tab if not isarrafterdict else "")
+                    + "{ "
+                    + c("END")
+                    + (
+                        f"{c("orange")},{c("END")} ".join(
+                            f"{c("purple")+(f'"{k}"' if isinstance(k, str) else formatitem(k, tab)
+                                            )+c("END")}{c("orange")}:{c("END")} {formatitem(v, tab, True)}"
+                            for k, v in item.items()
+                        )
+                    )
+                    + c("orange")
+                    + " }"
+                    + c("END")
+                )
+            else:
+                return (
+                    TYPENAME
+                    + c("orange")
+                    # + "\n"
+                    + (" " * tab if not isarrafterdict else "")
+                    + "{"
+                    + c("END")
+                    + "\n  "
+                    + (
+                        f"{c("orange")},{c("END")}\n  ".join(
+                            f"{c("purple")+(" "*tab)+(f'"{k}"' if isinstance(k, str) else formatitem(
+                                k, tab))+c("END")}{c("orange")}:{c("END")} {formatitem(v, tab, True)}"
+                            for k, v in item.items()
+                        )
+                    )
+                    + "\n"
+                    + c("orange")
+                    + " " * tab
+                    + "}"
+                    + c("END")
+                )
+        if isinstance(item, list):
+            if len(stringify(item)) + tab < wrapat:
+                return (
+                    TYPENAME
+                    + c("orange")
+                    + ("" if isarrafterdict else " " * tab)
+                    + "[ "
+                    + c("END")
+                    + (
+                        f"{c("orange")},{c("END")} ".join(
+                            map(
+                                lambda newitem: formatitem(newitem, tab),
+                                item,
+                            )
+                        )
+                    )
+                    + c("orange")
+                    + " ]"
+                    + c("END")
+                )
+            else:
+                return (
+                    TYPENAME
+                    + c("orange")
+                    + ("" if isarrafterdict else " " * tab)
+                    + "[\n"
+                    + c("END")
+                    + (
+                        f"{c("orange")},{c("END")}\n".join(
+                            map(
+                                lambda newitem: (
+                                    "  " + " " * tab
+                                    if isinstance(newitem, str)
+                                    or isinstance(newitem, int)
+                                    or isinstance(newitem, float)
+                                    else ""
+                                )
+                                + formatitem(newitem, tab),
+                                item,
+                            )
+                        )
+                    )
+                    + c("orange")
+                    + "\n"
+                    + " " * tab
+                    + "]"
+                    + c("END")
+                )
+
+        return " " * tab + name(item) + '"' + str(item).replace('"', '\\"') + '"'
+    except Exception as e:
+        print.plain(e)
+        return " " * tab + f"{c("red")}{repr(item)}{c("end")}"
+
+
+logfile(f"{fg(30)}---PROGRAM STARTED---{fg()}")
+logfile(f"{fg(30)}[ARGS]{fg()}", sys.argv)
+# END

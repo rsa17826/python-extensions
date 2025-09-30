@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+setfoldericon = "misc.sfi:sfi"
+sfi = "misc.sfi:sfi"
+
+[project]
+name = "misc"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "U.N. Owen", email = "void@some.where" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "folderikon==0.0.2",
+  "TKinterModernThemes==1.10.4",
+  "commentjson==0.9.0",
+  "pywin32==308"
+]
+
+[project.urls]
+Documentation = "https://github.com/U.N. Owen/misc#readme"
+Issues = "https://github.com/U.N. Owen/misc/issues"
+Source = "https://github.com/U.N. Owen/misc"
+
+[tool.hatch.version]
+path = "src/misc/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/misc tests}"
+
+[tool.coverage.run]
+source_pkgs = ["misc", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/misc/__about__.py",
+]
+
+[tool.coverage.paths]
+misc = ["src/misc", "*/misc/src/misc"]
+tests = ["tests", "*/misc/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
