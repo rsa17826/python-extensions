@@ -2,16 +2,19 @@
 #SingleInstance Force
 
 ; must include
-#Include <Misc>
-
 #Include *i <AutoThemed>
+#include <vars>
+
+#Include <base> ; Array as base, Map as base, String as base, File as F, JSON
+
+#Include <Misc> ; print, range, swap, ToString, RegExMatchAll, Highlight, MouseTip, WindowFromPoint, ConvertWinPos, WinGetInfo, GetCaretPos, IntersectRect
 SetWorkingDir(A_ScriptDir)
 
 args := 'cd "' A_ScriptDir '" & '
 loop files "*.*", "d" {
   if A_LoopFileName.startsWith('.')
     continue
-  args .= 'pip install -e ./' A_LoopFileName ' & '
+  args .= 'echo y|pip uninstall ' A_LoopFileName ' & pip install ./' A_LoopFileName ' & '
 }
 
 lastclip := A_Clipboard
