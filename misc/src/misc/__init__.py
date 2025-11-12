@@ -14,7 +14,7 @@ import inspect
 # # Get the frame of the caller
 caller_frame = inspect.stack()[-3]
 caller_file = caller_frame.filename
-paths=[*map(lambda x: x.filename, inspect.stack())]
+paths = [*map(lambda x: x.filename, inspect.stack())]
 for path in paths:
   # if not Path(path.replace("\\\\", "\\")).exists():
   #   continue
@@ -31,7 +31,7 @@ for path in paths:
   if path.endswith(">"):
     continue
   # print(path)
-  caller_file=path
+  caller_file = path
 # print(caller_file, paths)
 
 # # Change the working directory to the directory of the caller file
@@ -160,6 +160,8 @@ class enum:
 
   def __getitem__(self, name: str) -> int:
     return self._dict[name]
+
+
 # F
 class f:
   @staticmethod
@@ -402,7 +404,7 @@ class args:
     ui = TKMT.ThemedTKinterFrame("TITLE", "park", "dark", False, False)
     ui.Button("run", run)
     ui.Button("run hidden", bind(run, "hide"))
-    ui.Separator()  # type: ignore
+    ui.Separator() # type: ignore
     ui.root.protocol("WM_DELETE_WINDOW", lambda: os._exit(0))
 
     class add:
@@ -509,6 +511,8 @@ class args:
       if arg in a_args:
         found += a_args[arg]
     return found
+
+
 args.parse(["-log"])
 
 # args.parse()
@@ -604,7 +608,7 @@ def showhelp():
 
 Timer(
   0.1, showhelp
-).start()  # dont know why but 0 doesnt work on this like it did above
+).start() # dont know why but 0 doesnt work on this like it did above
 # END
 
 
@@ -664,6 +668,8 @@ def dictmerge(dict1, dict2, reversePriority=False):
       if not reversePriority or key not in dict1:
         dict1[key] = value
   return dict1
+
+
 class json:
   """
   A class for working with JSON data.
@@ -782,9 +788,9 @@ class json:
           )
         if isinstance(item, dict):
           if "#include" in item:
-            for key, val in previnnerjson.items():  # type: ignore
+            for key, val in previnnerjson.items(): # type: ignore
               if val == innerjson:
-                previnnerjson[key] = ref(parent, innerjson)  # type: ignore
+                previnnerjson[key] = ref(parent, innerjson) # type: ignore
                 break
           json.parseincludes(
             parent, item, splitpathat=splitpathat, previnnerjson=innerjson
@@ -818,16 +824,16 @@ class json:
     """
     # json = re.sub(
     #     r"^ *//.*$\n?", "", json, flags=re.MULTILINE
-    # )  # remove // comments
+    # ) # remove // comments
     # json = re.sub(
     #     r"^ */\*[\s\S]*?\*\/$", "", json, flags=re.MULTILINE
-    # )  # remove /**/ comments
+    # ) # remove /**/ comments
     # json = re.sub(
     #     r"(,\s+)\}", "}", json, flags=re.MULTILINE
-    # )  # remove extra trailing commas
+    # ) # remove extra trailing commas
     # json = re.sub(
     #     r"(,\s+)\]", "]", json, flags=re.MULTILINE
-    # )  # remove extra trailing commas
+    # ) # remove extra trailing commas
     return commentjson.loads(json)
 
   @staticmethod
@@ -836,6 +842,7 @@ class json:
       return oldjson.dumps(obj, indent=2)
     else:
       return oldjson.dumps(obj)
+
 
 # def setfoldericon(dir: str, imgpath: str) -> None:
 #     """
@@ -891,6 +898,7 @@ class json:
 #     Args:
 #         start (str): The original path of the file.
 #         end (str): The destination directory.
+
 
 #     Returns (None):
 #     """
@@ -1045,6 +1053,7 @@ def logfile(
 
 
 # re.sub(r"\[\d+m", "", data)
+
 
 class print:
   c = (lambda x: "") if args.has("pp") else getcolor
@@ -1229,6 +1238,7 @@ class print:
       flush=flush,
     )
 
+
 def formatitem(item, tab=-2, isarrafterdict=False, nocolor=False):
   """formats data into a string
 
@@ -1273,7 +1283,7 @@ def formatitem(item, tab=-2, isarrafterdict=False, nocolor=False):
     if item == False and type(item) == type(False):
       return "false"
     if type(item) in [type(_class), type(_func)]:
-      return f"{c("RED")}<{"class" if type(item)==type(_class) else "function"} {c("BOLD")}{c("BLUE")}{item.__name__}{c("END")}{c("RED")}>{c("END")}"  # type: ignore
+      return f"{c("RED")}<{"class" if type(item)==type(_class) else "function"} {c("BOLD")}{c("BLUE")}{item.__name__}{c("END")}{c("RED")}>{c("END")}" # type: ignore
     if isinstance(item, str):
       return (
         c("purple")
@@ -1328,7 +1338,7 @@ def formatitem(item, tab=-2, isarrafterdict=False, nocolor=False):
       except Exception as e:
         pass
       if not len(item):
-        return "{}"
+        return f"{c("orange")}{'{}'}{c("END")}"
       if strlen + tab < wrapat:
         return (
           TYPENAME
@@ -1339,7 +1349,7 @@ def formatitem(item, tab=-2, isarrafterdict=False, nocolor=False):
           + c("END")
           + (
             f"{c("orange")},{c("END")} ".join(
-              f"{c("purple")+(f'"{k}"' if isinstance(k, str) else formatitem(k, tab))+c("END")}{c("orange")}:{c("END")} {formatitem(v, tab, True)}"
+              f"{c("purple")+(f'"{k}"' if isinstance(k, str) else formatitem(k, 0))+c("END")}{c("orange")}:{c("END")} {formatitem(v, 0, True)}"
               for k, v in item.items()
             )
           )
@@ -1374,6 +1384,8 @@ def formatitem(item, tab=-2, isarrafterdict=False, nocolor=False):
         strlen = len(stringify(item))
       except Exception as e:
         pass
+      if not len(item):
+        return f'{c("orange")}[]{c("END")}'
       if strlen + tab < wrapat:
         return (
           TYPENAME
@@ -1384,7 +1396,7 @@ def formatitem(item, tab=-2, isarrafterdict=False, nocolor=False):
           + (
             f"{c("orange")},{c("END")} ".join(
               map(
-                lambda newitem: formatitem(newitem, tab),
+                lambda newitem: formatitem(newitem, -2),
                 item,
               )
             )
@@ -1519,7 +1531,7 @@ class FolderIkon:
       pass
     else:
       # Image is a local path or default argument
-      self.image = Path(self.__image)  # type: ignore
+      self.image = Path(self.__image) # type: ignore
 
     if self.__icon:
       if self.parent == Path.cwd():
@@ -1551,7 +1563,7 @@ class FolderIkon:
     try:
       config.read(self.conf)
     except configparser.Error as exc:
-      fp.close()  # type: ignore
+      fp.close() # type: ignore
       if not conf_existed:
         self.conf.unlink()
       self.icon.unlink()
@@ -1647,13 +1659,13 @@ class OptObj:
 def setclip(data):
   win32clipboard.OpenClipboard()
   win32clipboard.EmptyClipboard()
-  win32clipboard.SetClipboardText(data)  # type: ignore
+  win32clipboard.SetClipboardText(data) # type: ignore
   win32clipboard.CloseClipboard()
 
 
 def getclip():
   win32clipboard.OpenClipboard()
-  data = win32clipboard.GetClipboardData()  # type: ignore
+  data = win32clipboard.GetClipboardData() # type: ignore
   win32clipboard.CloseClipboard()
   return data
 
@@ -1669,7 +1681,7 @@ class LLM:
       json={
         "model": self.model,
         "prompt": prompt,
-        "stream": False,  # Use boolean False instead of string "false"
+        "stream": False, # Use boolean False instead of string "false"
         "context": self.ctx,
         # "format": "json",
       },
